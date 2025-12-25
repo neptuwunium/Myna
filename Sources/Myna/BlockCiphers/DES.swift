@@ -4,8 +4,7 @@
 //
 // This code is adapted from OpenSSL.
 //
-// https://github.com/openssl/openssl/blob/openssl-3.6.0/include/openssl/des.h
-// https://github.com/openssl/openssl/blob/openssl-3.6.0/include/openssl/des_local.h
+// https://github.com/openssl/openssl/blob/openssl-3.6.0/crypto/des/des_local.h
 // https://github.com/openssl/openssl/blob/openssl-3.6.0/crypto/des/set_key.c
 // https://github.com/openssl/openssl/blob/openssl-3.6.0/crypto/des/des_enc.c
 //
