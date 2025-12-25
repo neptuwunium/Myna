@@ -1,6 +1,6 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 
-// SPDX-FileCopyrightText: 2024 Legiayayana <ada@chronovore.dev>
+// SPDX-FileCopyrightText: 2024-2026 Neptuwunium <ada@chronovore.dev>
 // SPDX-License-Identifier: EUPL-1.2
 
 import PackageDescription
