@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 public enum MynaError: Error {
+	case notImplemented
 	case systemError
 	case unsupportedPlatform
 	case unexpectedPadding

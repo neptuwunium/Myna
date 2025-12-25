@@ -7,6 +7,7 @@ import PackageDescription
 
 let package = Package(
 	name: "Myna",
+	platforms: [.macOS(.v26)],
 	products: [
 		.library(name: "Myna", targets: ["Myna"])
 	],

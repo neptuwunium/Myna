@@ -36,11 +36,11 @@ public struct CBCTransform: BlockCipherTransform {
 		var result = Data(capacity: (blocks.count + 1) * algorithm.blockSize)
 
 		for block in blocks {
-			previousBlock = try algorithm.encrypt(block.xor(other: previousBlock))
+			previousBlock = try algorithm.encrypt(block.xor(with: previousBlock))
 			result.append(previousBlock)
 		}
 
-		result.append(try algorithm.encrypt(finalBlock.xor(other: previousBlock)))
+		result.append(try algorithm.encrypt(finalBlock.xor(with: previousBlock)))
 
 		return result
 	}
@@ -55,13 +55,13 @@ public struct CBCTransform: BlockCipherTransform {
 		var result = Data(capacity: blocks.count * algorithm.blockSize)
 
 		for block in blocks.dropLast() {
-			previousBlock = try algorithm.decrypt(block).xor(other: previousBlock)
+			previousBlock = try algorithm.decrypt(block).xor(with: previousBlock)
 			result.append(previousBlock)
 		}
 
 		guard let lastBlock = blocks.last else { throw MynaError.systemError }
 
-		let finalBlock = try algorithm.decrypt(lastBlock).xor(other: previousBlock)
+		let finalBlock = try algorithm.decrypt(lastBlock).xor(with: previousBlock)
 		result.append(try padding.unpad(data: finalBlock))
 
 		return result

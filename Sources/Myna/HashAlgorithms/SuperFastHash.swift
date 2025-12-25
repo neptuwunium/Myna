@@ -3,8 +3,6 @@
 
 import Foundation
 
-@inline(__always) private func get16bits(_ data: InlineArray<3, UInt8>) -> UInt32 { UInt32(data[0]) | (UInt32(data[1]) << 8) }
-
 public struct SuperFastHash: HashAlgorithm {
 	public typealias T = UInt32
 
@@ -35,8 +33,8 @@ public struct SuperFastHash: HashAlgorithm {
 		if data.count >= 4 {
 			for index in 1 ... length {
 				let off = (index - 1) << 2
-				hash &+= UInt32(UInt16.fromData(data, offset: off))
-				let tmp = (UInt32(UInt16.fromData(data, offset: off + 2)) << 11) ^ hash
+				hash &+= UInt32(UInt16.from(data: data, offset: off))
+				let tmp = (UInt32(UInt16.from(data: data, offset: off + 2)) << 11) ^ hash
 				hash = (hash << 16) ^ tmp
 				hash &+= hash >> 11
 			}
@@ -55,12 +53,12 @@ public struct SuperFastHash: HashAlgorithm {
 	public mutating func finalize() -> T {
 		switch incompleteLength {
 			case 3:
-				hash &+= get16bits(incomplete)
+				hash &+= UInt32(UInt16.from(array: incomplete))
 				hash ^= hash << 16
 				hash ^= T(Int8(bitPattern: incomplete[2])) << 18
 				hash &+= hash >> 11
 			case 2:
-				hash &+= get16bits(incomplete)
+				hash &+= UInt32(UInt16.from(array: incomplete))
 				hash ^= hash << 11
 				hash &+= hash >> 17
 			case 1:
