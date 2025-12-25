@@ -10,7 +10,7 @@ jobs:
         name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
         strategy:
             matrix:
-                os: [ubuntu-latest, macos-latest]
+                os: [ubuntu-latest, macos-26]
         runs-on: ${{ matrix.os }}
         steps:
             - uses: neptuwunium/setup-swift@3b4b7c2d74a080c45f2e78dbf3f69a7afeb5aa42
