@@ -6,16 +6,16 @@ name: "[Swift] Test"
 on: [push]
 
 jobs:
-  swift-test:
-    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: swift-actions/setup-swift@v3
-      - uses: actions/checkout@v4
-      - name: Build
-        run: swift build
-      - name: Test
-        run: swift test
+    swift-test:
+        name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
+        strategy:
+            matrix:
+                os: [ubuntu-latest, macos-latest]
+        runs-on: ${{ matrix.os }}
+        steps:
+            - uses: neptuwunium/setup-swift@3b4b7c2d74a080c45f2e78dbf3f69a7afeb5aa42
+            - uses: actions/checkout@v4
+            - name: Build
+              run: swift build
+            - name: Test
+              run: swift test
