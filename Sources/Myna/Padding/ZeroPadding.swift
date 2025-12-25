@@ -9,17 +9,11 @@ import Foundation
 /// and removes trailing zeros during unpadding.
 public struct ZeroPadding: PaddingScheme {
 	public func unpad(data: Data) throws -> Data {
-		let remain = data.reversed().count { value in
-			value == 0
-		}
+		let remain = data.reversed().count { value in value == 0 }
 
-		guard remain > 0 else {
-			throw MynaError.unexpectedPadding
-		}
+		guard remain > 0 else { throw MynaError.unexpectedPadding }
 
-		if remain == data.count {
-			return Data()
-		}
+		if remain == data.count { return Data() }
 
 		return data[...(data.count - Int(remain) - 1)]
 	}
@@ -29,9 +23,7 @@ public struct ZeroPadding: PaddingScheme {
 		block.append(data)
 
 		let remain = into - data.count
-		if remain <= 0 {
-			throw MynaError.invalidInputLength
-		}
+		if remain <= 0 { throw MynaError.invalidInputLength }
 		block.append(contentsOf: Array(repeating: 0, count: remain))
 
 		return block

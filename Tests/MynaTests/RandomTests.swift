@@ -8,17 +8,10 @@ import Testing
 
 struct UnsafeDataExtensionTests {
 	@Test func random() async throws {
-		let data = try Data.random(count: 16)
+		let data = try SystemNoise().getBytes(count: 16)
 		#expect(data.count == 16)
-		#expect(
-			!data.allSatisfy { value in
-				value == 0
-			})
+		#expect(!data.allSatisfy { value in value == 0 })
 	}
 
-	@Test func randomZero() async throws {
-		#expect(throws: MynaError.systemError) {
-			try Data.random(count: 0)
-		}
-	}
+	@Test func randomZero() async throws { #expect(throws: MynaError.systemError) { try SystemNoise().getBytes(count: 0) } }
 }

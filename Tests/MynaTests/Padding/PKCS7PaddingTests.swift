@@ -42,40 +42,30 @@ struct PKCS7PaddingTests {
 	@Test func padFail() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 		let padding = PKCS7Padding()
-		#expect(throws: MynaError.invalidInputLength) {
-			try padding.pad(data: data, into: 8)
-		}
+		#expect(throws: MynaError.invalidInputLength) { try padding.pad(data: data, into: 8) }
 	}
 
 	@Test func unpadFailInvalid() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x07, 0x07, 0x07, 0x07, 0x07, 0x07, 0x08])
 		let padding = PKCS7Padding()
-		#expect(throws: MynaError.unexpectedPadding) {
-			try padding.unpad(data: data)
-		}
+		#expect(throws: MynaError.unexpectedPadding) { try padding.unpad(data: data) }
 	}
 
 	@Test func unpadFailWrong() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
 		let padding = PKCS7Padding()
-		#expect(throws: MynaError.unexpectedPadding) {
-			try padding.unpad(data: data)
-		}
+		#expect(throws: MynaError.unexpectedPadding) { try padding.unpad(data: data) }
 	}
 
 	@Test func unpadFailOverflow() async throws {
 		let data = Data([0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11])
 		let padding = PKCS7Padding()
-		#expect(throws: MynaError.unexpectedPadding) {
-			try padding.unpad(data: data)
-		}
+		#expect(throws: MynaError.unexpectedPadding) { try padding.unpad(data: data) }
 	}
 
 	@Test func unpadFailZero() async throws {
 		let data = Data()
 		let padding = PKCS7Padding()
-		#expect(throws: MynaError.unexpectedPadding) {
-			try padding.unpad(data: data)
-		}
+		#expect(throws: MynaError.unexpectedPadding) { try padding.unpad(data: data) }
 	}
 }

@@ -38,8 +38,6 @@ struct NoPaddingTests {
 	@Test func padFail() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 		let padding = NoPadding()
-		#expect(throws: MynaError.invalidInputLength) {
-			try padding.pad(data: data, into: 1)
-		}
+		#expect(throws: MynaError.invalidInputLength) { try padding.pad(data: data, into: 1) }
 	}
 }

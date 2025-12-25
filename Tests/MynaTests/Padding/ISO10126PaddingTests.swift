@@ -9,10 +9,9 @@ import Testing
 struct ISO10126PaddingTests {
 	@Test func pad() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
-		let padding = ISO10126Padding()
+		let padding = ISO10126Padding(noise: DummyNoise())
 		let padded = try padding.pad(data: data, into: 16)
-		// hard to test due to randomness
-		let expected = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, padded[9], padded[10], padded[11], padded[12], padded[13], padded[14], 0x07])
+		let expected = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, DummyNoise.value, DummyNoise.value, DummyNoise.value, DummyNoise.value, DummyNoise.value, DummyNoise.value, 0x07])
 		#expect(padded.elementsEqual(expected))
 	}
 
@@ -26,10 +25,9 @@ struct ISO10126PaddingTests {
 
 	@Test func padEmpty() async throws {
 		let data = Data()
-		let padding = ISO10126Padding()
+		let padding = ISO10126Padding(noise: DummyNoise())
 		let padded = try padding.pad(data: data, into: 16)
-		var expected = Data(padded)
-		// hard to test due to randomness
+		var expected = Data(repeating: DummyNoise.value, count: 16)
 		expected[15] = 0x10
 		#expect(padded.elementsEqual(expected))
 	}
@@ -45,32 +43,24 @@ struct ISO10126PaddingTests {
 	@Test func padFail() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 		let padding = ISO10126Padding()
-		#expect(throws: MynaError.invalidInputLength) {
-			try padding.pad(data: data, into: 8)
-		}
+		#expect(throws: MynaError.invalidInputLength) { try padding.pad(data: data, into: 8) }
 	}
 
 	@Test func unpadFailWrong() async throws {
 		let data = Data([0xdf, 0xf1, 0x12, 0xd8, 0x96, 0x5f, 0x51, 0x30, 0xbb, 0x54, 0x2d, 0xf8, 0x79, 0xd7, 0x4d, 0x00])
 		let padding = ISO10126Padding()
-		#expect(throws: MynaError.unexpectedPadding) {
-			try padding.unpad(data: data)
-		}
+		#expect(throws: MynaError.unexpectedPadding) { try padding.unpad(data: data) }
 	}
 
 	@Test func unpadFailOverflow() async throws {
 		let data = Data([0xdf, 0xf1, 0x12, 0xd8, 0x96, 0x5f, 0x51, 0x30, 0xbb, 0x54, 0x2d, 0xf8, 0x79, 0xd7, 0x4d, 0x11])
 		let padding = ISO10126Padding()
-		#expect(throws: MynaError.unexpectedPadding) {
-			try padding.unpad(data: data)
-		}
+		#expect(throws: MynaError.unexpectedPadding) { try padding.unpad(data: data) }
 	}
 
 	@Test func unpadFailZero() async throws {
 		let data = Data()
 		let padding = ISO10126Padding()
-		#expect(throws: MynaError.unexpectedPadding) {
-			try padding.unpad(data: data)
-		}
+		#expect(throws: MynaError.unexpectedPadding) { try padding.unpad(data: data) }
 	}
 }

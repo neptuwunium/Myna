@@ -13,17 +13,17 @@ import Foundation
 	import WinSDK
 #endif
 
-extension Data {
-	static func random(count: Int) throws -> Data {
+public protocol RandomNoiseGenerator {
+	func getBytes(count: Int) throws -> Data
+}
+
+public struct SystemNoise: RandomNoiseGenerator {
+	public func getBytes(count: Int) throws -> Data {
 		var data = Data(count: count)
 		let success = data.withUnsafeMutableBytes { mutablePointer in
-			guard count > 0 else {
-				return false
-			}
+			guard count > 0 else { return false }
 
-			guard let unsafeMutablePointer = mutablePointer.baseAddress else {
-				return false
-			}
+			guard let unsafeMutablePointer = mutablePointer.baseAddress else { return false }
 
 			let unsafePointer = unsafeMutablePointer.assumingMemoryBound(to: UInt8.self)
 
@@ -38,9 +38,7 @@ extension Data {
 			#endif
 		}
 
-		guard success else {
-			throw MynaError.systemError
-		}
+		guard success else { throw MynaError.systemError }
 
 		return data
 	}

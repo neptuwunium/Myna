@@ -16,51 +16,44 @@ public struct ECBTransform: BlockCipherTransform {
 		padding = paddingMode ?? PKCS7Padding()
 	}
 
-	public func encrypt(data: Data) throws -> Data {
-		if data.count == 0 {
-			return Data()
-		}
+	public func encrypt(_ plainText: Data) throws -> Data {
+		if plainText.count == 0 { return Data() }
 
-		var result = Data(capacity: data.count.align(into: algorithm.blockSize))
-		var blocks = data.chunks(ofCount: algorithm.blockSize)[...]  // cast to slice.
+		var result = Data(capacity: plainText.count.align(into: algorithm.blockSize))
+		var blocks = plainText.chunks(ofCount: algorithm.blockSize)[...]  // cast to slice.
 		let finalBlock: Data
-		if data.count % algorithm.blockSize == 0 {
+		if plainText.count % algorithm.blockSize == 0 {
 			finalBlock = try padding.pad(data: Data(), into: algorithm.blockSize)
 		} else {
 			blocks = blocks.dropLast()
-			finalBlock = try padding.pad(data: blocks.last!, into: algorithm.blockSize)
+
+			guard let lastBlock = blocks.last else { throw MynaError.systemError }
+
+			finalBlock = try padding.pad(data: lastBlock, into: algorithm.blockSize)
 		}
 
-		guard finalBlock.count == algorithm.blockSize || finalBlock.count == 0 else {
-			throw MynaError.invalidInputLength
-		}
+		guard finalBlock.count == algorithm.blockSize || finalBlock.count == 0 else { throw MynaError.invalidInputLength }
 
-		for block in blocks {
-			result.append(try algorithm.encrypt(block: block))
-		}
+		for block in blocks { result.append(try algorithm.encrypt(block)) }
 
-		result.append(try algorithm.encrypt(block: finalBlock))
+		result.append(try algorithm.encrypt(finalBlock))
 
 		return result
 	}
 
-	public func decrypt(data: Data) throws -> Data {
-		guard data.count % algorithm.blockSize == 0 else {
-			throw MynaError.invalidInputLength
-		}
+	public func decrypt(_ cipherText: Data) throws -> Data {
+		guard cipherText.count % algorithm.blockSize == 0 else { throw MynaError.invalidInputLength }
 
-		if data.count == 0 {
-			return Data()
-		}
+		if cipherText.count == 0 { return Data() }
 
-		var result = Data(capacity: data.count.align(into: algorithm.blockSize))
-		let blocks = data.chunks(ofCount: algorithm.blockSize)
+		var result = Data(capacity: cipherText.count.align(into: algorithm.blockSize))
+		let blocks = cipherText.chunks(ofCount: algorithm.blockSize)
 
-		for block in blocks.dropLast() {
-			result.append(try algorithm.decrypt(block: block))
-		}
+		for block in blocks.dropLast() { result.append(try algorithm.decrypt(block)) }
 
-		let finalBlock = try algorithm.decrypt(block: blocks.last!)
+		guard let lastBlock = blocks.last else { throw MynaError.systemError }
+
+		let finalBlock = try algorithm.decrypt(lastBlock)
 		result.append(try padding.unpad(data: finalBlock))
 		return result
 	}

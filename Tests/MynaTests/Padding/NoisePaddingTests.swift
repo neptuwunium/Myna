@@ -9,10 +9,11 @@ import Testing
 struct NoisePaddingTests {
 	@Test func pad() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
-		let padding = NoisePadding()
+		let padding = NoisePadding(noise: DummyNoise())
 		let padded = try padding.pad(data: data, into: 16)
-		// hard to test due to randomness
-		let expected = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, padded[9], padded[10], padded[11], padded[12], padded[13], padded[14], padded[15]])
+		let expected = Data([
+			0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, DummyNoise.value, DummyNoise.value, DummyNoise.value, DummyNoise.value, DummyNoise.value, DummyNoise.value, DummyNoise.value,
+		])
 		#expect(padded.elementsEqual(expected))
 	}
 
@@ -40,8 +41,6 @@ struct NoisePaddingTests {
 	@Test func padFail() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 		let padding = NoisePadding()
-		#expect(throws: MynaError.invalidInputLength) {
-			try padding.pad(data: data, into: 1)
-		}
+		#expect(throws: MynaError.invalidInputLength) { try padding.pad(data: data, into: 1) }
 	}
 }

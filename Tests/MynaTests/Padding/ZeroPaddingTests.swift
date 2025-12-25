@@ -42,16 +42,12 @@ struct ZeroPaddingTests {
 	@Test func padFail() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 		let padding = ZeroPadding()
-		#expect(throws: MynaError.invalidInputLength) {
-			try padding.pad(data: data, into: 8)
-		}
+		#expect(throws: MynaError.invalidInputLength) { try padding.pad(data: data, into: 8) }
 	}
 
 	@Test func unpadFail() async throws {
 		let data = Data([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
 		let padding = ZeroPadding()
-		#expect(throws: MynaError.unexpectedPadding) {
-			try padding.unpad(data: data)
-		}
+		#expect(throws: MynaError.unexpectedPadding) { try padding.unpad(data: data) }
 	}
 }

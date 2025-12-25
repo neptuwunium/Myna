@@ -7,17 +7,11 @@ import Testing
 @testable import Myna
 
 struct IntExtensionTests {
-	@Test func alignN() async throws {
-		#expect(12.align(into: 16) == 16)
-	}
+	@Test func alignN() async throws { #expect(12.align(into: 16) == 16) }
 
-	@Test func alignE() async throws {
-		#expect(32.align(into: 16) == 32)
-	}
+	@Test func alignE() async throws { #expect(32.align(into: 16) == 32) }
 
-	@Test func alignZ() async throws {
-		#expect(0.align(into: 16) == 0)
-	}
+	@Test func alignZ() async throws { #expect(0.align(into: 16) == 0) }
 }
 
 struct DataExtensionTests {

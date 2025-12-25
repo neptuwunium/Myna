@@ -13,14 +13,19 @@ public protocol HashAlgorithm {
 	/// Hashes data from the `Data` buffer.
 	///
 	/// - Parameter data: the `Data` buffer to be hashed.
-	func update(data: Data)
+	mutating func update(_ data: Data)
 
 	/// Finalizes the hash buffer.
 	/// - Returns: the hashed data value.
-	func finalize() -> T
+	mutating func finalize() -> T
 
 	/// One-shot hashes the data from the `Data` buffer
 	/// - Parameter data: the `Data` buffer to be hashed.
 	/// - Returns: the hashed data value.
-	static func hash(data: Data) -> T
+	static func hash(_ data: Data) -> T
+
+	/// One-shot hashes the provided string
+	/// - Parameter text: the string buffer to be hashed.
+	/// - Returns: the hashed data value.
+	static func hash(_ text: String) -> T
 }

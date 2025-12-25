@@ -8,19 +8,19 @@ import Foundation
 /// ISO10126 fills the remaining bytes with random noise, sets the final
 /// byte to the number of padding bytes added.
 public struct ISO10126Padding: PaddingScheme {
+	private let noise: RandomNoiseGenerator
+
+	public init(noise: RandomNoiseGenerator? = nil) {
+		self.noise = noise ?? SystemNoise()
+	}
+
 	public func unpad(data: Data) throws -> Data {
 		if let remain = data.last {
-			guard remain != 0 else {
-				throw MynaError.unexpectedPadding
-			}
+			guard remain != 0 else { throw MynaError.unexpectedPadding }
 
-			guard remain <= data.count else {
-				throw MynaError.unexpectedPadding
-			}
+			guard remain <= data.count else { throw MynaError.unexpectedPadding }
 
-			if remain == data.count {
-				return Data()
-			}
+			if remain == data.count { return Data() }
 
 			return data[...(data.count - Int(remain) - 1)]
 		}
@@ -33,11 +33,9 @@ public struct ISO10126Padding: PaddingScheme {
 		block.append(data)
 
 		let remain = into - data.count
-		guard remain > 0 else {
-			throw MynaError.invalidInputLength
-		}
+		guard remain > 0 else { throw MynaError.invalidInputLength }
 
-		block.append(try Data.random(count: remain - 1))
+		block.append(try noise.getBytes(count: remain - 1))
 		block.append(UInt8(remain))
 
 		return block

@@ -4,18 +4,19 @@
 import Foundation
 
 /// Methods required for a stream cipher.
+// NOTE: we should refactor this to be actually streamable
 public protocol StreamCipher {
 	/// Encrypts a stream of data
 	///
-	/// - Parameter data: The `Data` stream to be encrypted.
+	/// - Parameter plainText: The `Data` stream to be encrypted.
 	/// - Throws: `MynaError.invalidInputLength` if the input data is of invalid length.
 	/// - Returns: The encrypted `Data` stream.
-	func encrypt(data: Data) throws -> Data
+	func encrypt(_ plainText: Data) throws -> Data
 
 	/// Decrypts a stream data.
 	///
-	/// - Parameter data: The `Data` stream to be decrypted.
+	/// - Parameter cipherText: The `Data` stream to be decrypted.
 	/// - Throws: `MynaError.invalidInputLength` if the input data is of invalid length.
 	/// - Returns: The decrypted `Data` stream.
-	func decrypt(data: Data) throws -> Data
+	func decrypt(_ cipherText: Data) throws -> Data
 }

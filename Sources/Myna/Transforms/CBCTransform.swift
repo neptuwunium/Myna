@@ -16,53 +16,52 @@ public struct CBCTransform: BlockCipherTransform {
 		padding = paddingMode ?? PKCS7Padding()
 	}
 
-	public mutating func encrypt(data: Data) throws -> Data {
-		if data.count == 0 {
-			return Data()
-		}
+	public mutating func encrypt(_ plainText: Data) throws -> Data {
+		if plainText.count == 0 { return Data() }
 
-		var result = Data(capacity: data.count.align(into: algorithm.blockSize))
-		var blocks = data.chunks(ofCount: algorithm.blockSize)[...]  // cast to slice.
+		var blocks = plainText.chunks(ofCount: algorithm.blockSize)[...]  // cast to slice.
 		let finalBlock: Data
-		if data.count % algorithm.blockSize == 0 {
+		if plainText.count % algorithm.blockSize == 0 {
 			finalBlock = try padding.pad(data: Data(), into: algorithm.blockSize)
 		} else {
 			blocks = blocks.dropLast()
-			finalBlock = try padding.pad(data: blocks.last!, into: algorithm.blockSize)
+
+			guard let lastBlock = blocks.last else { throw MynaError.systemError }
+
+			finalBlock = try padding.pad(data: lastBlock, into: algorithm.blockSize)
 		}
 
-		guard finalBlock.count == algorithm.blockSize || finalBlock.count == 0 else {
-			throw MynaError.invalidInputLength
-		}
+		guard finalBlock.count == algorithm.blockSize || finalBlock.count == 0 else { throw MynaError.invalidInputLength }
+
+		var result = Data(capacity: (blocks.count + 1) * algorithm.blockSize)
 
 		for block in blocks {
-			previousBlock = try algorithm.encrypt(block: block.xor(other: previousBlock))
+			previousBlock = try algorithm.encrypt(block.xor(other: previousBlock))
 			result.append(previousBlock)
 		}
 
-		result.append(try algorithm.encrypt(block: finalBlock.xor(other: previousBlock)))
+		result.append(try algorithm.encrypt(finalBlock.xor(other: previousBlock)))
 
 		return result
 	}
 
-	public mutating func decrypt(data: Data) throws -> Data {
-		guard data.count % algorithm.blockSize == 0 else {
-			throw MynaError.invalidInputLength
-		}
+	public mutating func decrypt(_ cipherText: Data) throws -> Data {
+		guard cipherText.count % algorithm.blockSize == 0 else { throw MynaError.invalidInputLength }
 
-		if data.count == 0 {
-			return Data()
-		}
+		if cipherText.count == 0 { return Data() }
 
-		var result = Data(capacity: data.count.align(into: algorithm.blockSize))
-		let blocks = data.chunks(ofCount: algorithm.blockSize)
+		let blocks = cipherText.chunks(ofCount: algorithm.blockSize)
+
+		var result = Data(capacity: blocks.count * algorithm.blockSize)
 
 		for block in blocks.dropLast() {
-			previousBlock = try algorithm.decrypt(block: block).xor(other: previousBlock)
+			previousBlock = try algorithm.decrypt(block).xor(other: previousBlock)
 			result.append(previousBlock)
 		}
 
-		let finalBlock = try algorithm.decrypt(block: blocks.last!).xor(other: previousBlock)
+		guard let lastBlock = blocks.last else { throw MynaError.systemError }
+
+		let finalBlock = try algorithm.decrypt(lastBlock).xor(other: previousBlock)
 		result.append(try padding.unpad(data: finalBlock))
 
 		return result
