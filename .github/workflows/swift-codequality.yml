@@ -7,20 +7,13 @@ on: [push]
 
 jobs:
   swift-cq:
-    if: "contains(github.event.head_commit.message, '[swift]')"
     name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        swift: ["6.0.2"]
-    defaults:
-      run:
-        working-directory: ./swift
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: swift-actions/setup-swift@ad7d41288211dee63936d63f92e3d153b8f9224e
-        with:
-          swift-version: ${{ matrix.swift }}
+      - uses: swift-actions/setup-swift@v3
       - uses: actions/checkout@v4
       - name: Lint
         run: swift format lint --configuration swift-format.json --strict --recursive .
