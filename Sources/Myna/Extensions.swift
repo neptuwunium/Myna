@@ -35,7 +35,7 @@ extension UInt8 {
 
 extension UInt16 {
 	@inlinable @inline(__always) static func from(data: Data, offset: Int = 0) -> Self {
-		precondition(data.count - offset >= 8)
+		precondition(data.count - offset >= 2)
 
 		return Self(data[offset]) | (Self(data[offset + 1]) << 8)
 	}
@@ -75,7 +75,7 @@ extension UInt16 {
 
 extension UInt32 {
 	@inlinable @inline(__always) static func from(data: Data, offset: Int = 0) -> Self {
-		precondition(data.count - offset >= 8)
+		precondition(data.count - offset >= 4)
 
 		// swift-format-ignore
 		return Self(data[offset]) | (Self(data[offset + 1]) << 8)
