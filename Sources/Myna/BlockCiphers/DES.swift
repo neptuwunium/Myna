@@ -17,7 +17,7 @@ import Foundation
 public struct DES: BlockCipher {
 	public var blockSize: Int = 8
 
-	private var key: DESKeySchedule
+	internal var key: DESKeySchedule
 
 	@inline(__always)
 	private static func permute(_ a: inout UInt32, _ b: inout UInt32, _ t: inout UInt32, _ n: Int, _ mod: UInt32) {
@@ -69,20 +69,20 @@ public struct DES: BlockCipher {
 			let s3 = UInt32(keyBits[2][Int(((c >> 13) & 0x0f) | ((c >> 14) & 0x30))])
 			let s4 = UInt32(keyBits[3][Int(c20 | c21 | c22)])
 
-			let k0 = s1 | s2 | s3 | s4
+			let k0: UInt32 = s1 | s2 | s3 | s4
 
 			let t1 = UInt32(keyBits[4][Int(d & 0x3f)])
 			let t2 = UInt32(keyBits[5][Int(((d >> 7) & 0x03) | ((d >> 8) & 0x3c))])
 			let t3 = UInt32(keyBits[6][Int((d >> 15) & 0x3f)])
 			let t4 = UInt32(keyBits[7][Int(((d >> 21) & 0x0f) | ((d >> 22) & 0x30))])
 
-			let k1 = t1 | t2 | t3 | t4
+			let k1: UInt32 = t1 | t2 | t3 | t4
 
-			let k2 = ((k1 << 16) | (k0 & 0x0000_ffff)) & 0xffff_ffff
-			self.key[i - 1][0] = k2.rotate(right: 30) & 0xffff_ffff
+			let k2: UInt32 = (k1 << 16) | (k0 & 0x0000_ffff)
+			self.key[i - 1][0] = k2.rotate(right: 30)
 
-			let k3 = ((k0 >> 16) | (k1 & 0xffff_0000))
-			self.key[i - 1][1] = k3.rotate(right: 26) & 0xffff_ffff
+			let k3: UInt32 = (k0 >> 16) | (k1 & 0xffff_0000)
+			self.key[i - 1][1] = k3.rotate(right: 26)
 		}
 	}
 
@@ -96,8 +96,8 @@ public struct DES: BlockCipher {
 }
 
 public typealias DESKey = InlineArray<8, UInt8>
-private typealias DESKeyLine = InlineArray<2, UInt32>
-private typealias DESKeySchedule = InlineArray<16, DESKeyLine>
+internal typealias DESKeyLine = InlineArray<2, UInt32>
+internal typealias DESKeySchedule = InlineArray<16, DESKeyLine>
 
 private let keyShift: InlineArray<16, Bool> = [false, false, true, true, true, true, true, true, false, true, true, true, true, true, true, false]
 private let keyBits: InlineArray<8, InlineArray<64, UInt32>> = [
