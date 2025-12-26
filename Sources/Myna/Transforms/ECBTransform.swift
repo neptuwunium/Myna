@@ -11,7 +11,7 @@ public struct ECBTransform: BlockCipherTransform {
 	private let algorithm: BlockCipher
 	private let padding: PaddingScheme
 
-	init(algorithm: BlockCipher, paddingMode: PaddingScheme?) {
+	public init(algorithm: BlockCipher, paddingMode: PaddingScheme?) {
 		self.algorithm = algorithm
 		padding = paddingMode ?? PKCS7Padding()
 	}

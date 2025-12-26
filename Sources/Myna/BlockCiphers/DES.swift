@@ -103,7 +103,7 @@ public struct DES: BlockCipher {
 	public init(key: DESKey) {
 		self.key = DESKeySchedule(repeating: DESKeyLine(repeating: 0))
 		var c = UInt32.from(array: key)
-		var d = UInt32.from(array: key, offset: 4)
+		var d = UInt32.from(array: key, from: 4)
 		var t: UInt32 = 0
 
 		Self.permute(&d, &c, &t, 4, 0x0f0f_0f0f)
@@ -161,7 +161,7 @@ public struct DES: BlockCipher {
 		}
 
 		var r = UInt32.from(data: plainText)
-		var l = UInt32.from(data: plainText, offset: 4)
+		var l = UInt32.from(data: plainText, from: 4)
 
 		Self.initialPermute(&r, &l)
 
@@ -188,7 +188,7 @@ public struct DES: BlockCipher {
 		}
 
 		var r = UInt32.from(data: cipherText)
-		var l = UInt32.from(data: cipherText, offset: 4)
+		var l = UInt32.from(data: cipherText, from: 4)
 
 		Self.initialPermute(&r, &l)
 

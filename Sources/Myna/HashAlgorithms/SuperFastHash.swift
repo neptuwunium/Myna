@@ -33,8 +33,8 @@ public struct SuperFastHash: HashAlgorithm {
 		if data.count >= 4 {
 			for index in 0 ..< length {
 				let off = index << 2
-				hash &+= UInt32(UInt16.from(data: data, offset: off))
-				let tmp = (UInt32(UInt16.from(data: data, offset: off + 2)) << 11) ^ hash
+				hash &+= UInt32(UInt16.from(data: data, from: off))
+				let tmp = (UInt32(UInt16.from(data: data, from: off + 2)) << 11) ^ hash
 				hash = (hash << 16) ^ tmp
 				hash &+= hash >> 11
 			}
@@ -45,7 +45,7 @@ public struct SuperFastHash: HashAlgorithm {
 		var incOff = 0
 
 		while incompleteLength > incOff {
-			incomplete[incOff] = data[offset + incOff]
+			incomplete[incOff] = data[data.startIndex + offset + incOff]
 			incOff += 1
 		}
 	}

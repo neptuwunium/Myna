@@ -24,7 +24,7 @@ public struct XTEA: BlockCipher {
 		}
 
 		var v0: UInt32 = UInt32.from(data: plainText)
-		var v1: UInt32 = UInt32.from(data: plainText, offset: 4)
+		var v1: UInt32 = UInt32.from(data: plainText, from: 4)
 		var sum: UInt32 = 0
 		for _ in 1 ... rounds {
 			v0 &+= (((v1 << 4) ^ (v1 >> 5)) &+ v1) ^ (sum &+ key[Int(sum & 3)])
@@ -40,7 +40,7 @@ public struct XTEA: BlockCipher {
 		}
 
 		var v0: UInt32 = UInt32.from(data: cipherText)
-		var v1: UInt32 = UInt32.from(data: cipherText, offset: 4)
+		var v1: UInt32 = UInt32.from(data: cipherText, from: 4)
 		var sum = seed
 		for _ in 1 ... rounds {
 			v1 &-= (((v0 << 4) ^ (v0 >> 5)) &+ v0) ^ (sum &+ key[Int((sum >> 11) & 3)])

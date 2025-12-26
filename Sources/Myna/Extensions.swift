@@ -8,27 +8,45 @@ extension Data {
 		precondition(self.count == other.count)
 		return Data(zip(self, other).map { $0 ^ $1 })
 	}
+
+	func hex() -> String { map { String(format: "%02hhx", $0) }.joined() }
 }
 
 extension Int { @inlinable @inline(__always) func align(into: Self) -> Self { (self + (into - 1)) & ~(into - 1) } }
 
 extension InlineArray {
-	@inlinable @inline(__always) static func from(data: Data, _ fallback: Element, offset: Int = 0) -> Self {
-		precondition(data.count - offset >= count)
+	@inlinable @inline(__always) static func from(data: Data, _ fallback: Element, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(data.count - relativeIndex >= count)
 
 		var value = Self(repeating: fallback)
-		_ = withUnsafeMutableBytes(of: &value) { ptr in
-			data.withUnsafeBytes({ $0[offset...].copyBytes(to: ptr) })
+		withUnsafeMutableBytes(of: &value) { valuePtr in
+			data.withUnsafeBytes { dataPtr in
+				if let baseAddress = dataPtr.baseAddress {
+					let sourcePtr = UnsafeRawBufferPointer(
+						start: baseAddress.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					valuePtr.copyMemory(from: sourcePtr)
+				}
+			}
 		}
 		return value
 	}
 
-	@inlinable @inline(__always) static func to(data: inout Data, offset: Int = 0) {
-		precondition(data.count - offset >= count)
+	@inlinable @inline(__always) func to(data: inout Data, from relativeIndex: Data.Index = 0) {
+		precondition(data.count - relativeIndex >= count)
 
 		var value = self
-		_ = withUnsafeBytes(of: &value) { ptr in
-			data.withUnsafeMutableBytes({ ptr.copyBytes(to: $0, from: offset...) })
+		withUnsafeBytes(of: &value) { valuePtr in
+			data.withUnsafeMutableBytes { dataPtr in
+				if let base = dataPtr.baseAddress {
+					let dest = UnsafeMutableRawBufferPointer(
+						start: base.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					dest.copyMemory(from: valuePtr)
+				}
+			}
 		}
 	}
 
@@ -44,33 +62,51 @@ extension UInt8 {
 }
 
 extension UInt16 {
-	@inlinable @inline(__always) static func from(data: Data, offset: Int = 0) -> Self {
-		precondition(data.count - offset >= 2)
+	@inlinable @inline(__always) static func from(data: Data, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(data.count - relativeIndex >= 2)
 
-		return Self(data[offset]) | (Self(data[offset + 1]) << 8)
+		let index = data.startIndex + relativeIndex
+		return Self(data[index]) | (Self(data[index + 1]) << 8)
 	}
-	@inlinable @inline(__always) static func from<let count: Int>(array: InlineArray<count, UInt8>, offset: Int = 0) -> Self {
-		precondition(array.count - offset >= 2)
+	@inlinable @inline(__always) static func from<let count: Int>(array: InlineArray<count, UInt8>, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(array.count - relativeIndex >= 2)
 
-		return Self(array[offset]) | (Self(array[offset + 1]) << 8)
+		let index = array.startIndex + relativeIndex
+		return Self(array[index]) | (Self(array[index + 1]) << 8)
 	}
 
-	@inlinable @inline(__always) static func to(data: inout Data, offset: Int = 0) {
-		precondition(data.count - offset >= 2)
+	@inlinable @inline(__always) func to(data: inout Data, from relativeIndex: Data.Index = 0) {
+		precondition(data.count - relativeIndex >= 2)
 
 		var value = self
-		_ = withUnsafeBytes(of: &value) { ptr in
-			data.withUnsafeMutableBytes({ ptr.copyBytes(to: $0, from: offset...) })
+		withUnsafeBytes(of: &value) { valuePtr in
+			data.withUnsafeMutableBytes { dataPtr in
+				if let base = dataPtr.baseAddress {
+					let dest = UnsafeMutableRawBufferPointer(
+						start: base.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					dest.copyMemory(from: valuePtr)
+				}
+			}
 		}
 	}
 
-	@inlinable @inline(__always) static func to<let count: Int>(array: inout InlineArray<count, UInt8>, offset: Int = 0) {
-		precondition(array.count - offset >= 2)
+	@inlinable @inline(__always) func to<let count: Int>(array: inout InlineArray<count, UInt8>, from relativeIndex: Data.Index = 0) {
+		precondition(array.count - relativeIndex >= 2)
 
 		var value = self
 		var span = array.mutableSpan
-		_ = withUnsafeBytes(of: &value) { ptr in
-			span.withUnsafeMutableBytes({ ptr.copyBytes(to: $0, from: offset...) })
+		withUnsafeBytes(of: &value) { valuePtr in
+			span.withUnsafeMutableBytes { dataPtr in
+				if let base = dataPtr.baseAddress {
+					let dest = UnsafeMutableRawBufferPointer(
+						start: base.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					dest.copyMemory(from: valuePtr)
+				}
+			}
 		}
 	}
 
@@ -84,38 +120,56 @@ extension UInt16 {
 }
 
 extension UInt32 {
-	@inlinable @inline(__always) static func from(data: Data, offset: Int = 0) -> Self {
-		precondition(data.count - offset >= 4)
+	@inlinable @inline(__always) static func from(data: Data, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(data.count - relativeIndex >= 4)
 
+		let index = data.startIndex + relativeIndex
 		// swift-format-ignore
-		return Self(data[offset]) | (Self(data[offset + 1]) << 8)
-			| (Self(data[offset + 2]) << 16) | (Self(data[offset + 3]) << 24)
+		return Self(data[index]) | (Self(data[index + 1]) << 8)
+			| (Self(data[index + 2]) << 16) | (Self(data[index + 3]) << 24)
 	}
 
-	@inlinable @inline(__always) static func from<let count: Int>(array: InlineArray<count, UInt8>, offset: Int = 0) -> Self {
-		precondition(array.count - offset >= 4)
+	@inlinable @inline(__always) static func from<let count: Int>(array: InlineArray<count, UInt8>, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(array.count - relativeIndex >= 4)
 
+		let index = array.startIndex + relativeIndex
 		// swift-format-ignore
-		return Self(array[offset]) | (Self(array[offset + 1]) << 8)
-	 		| (Self(array[offset + 2]) << 16) | (Self(array[offset + 3]) << 24)
+		return Self(array[index]) | (Self(array[index + 1]) << 8)
+	 		| (Self(array[index + 2]) << 16) | (Self(array[index + 3]) << 24)
 	}
 
-	@inlinable @inline(__always) static func to(data: inout Data, offset: Int = 0) {
-		precondition(data.count - offset >= 4)
+	@inlinable @inline(__always) func to(data: inout Data, from relativeIndex: Data.Index = 0) {
+		precondition(data.count - relativeIndex >= 4)
 
 		var value = self
-		_ = withUnsafeBytes(of: &value) { ptr in
-			data.withUnsafeMutableBytes({ ptr.copyBytes(to: $0, from: offset...) })
+		withUnsafeBytes(of: &value) { valuePtr in
+			data.withUnsafeMutableBytes { dataPtr in
+				if let base = dataPtr.baseAddress {
+					let dest = UnsafeMutableRawBufferPointer(
+						start: base.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					dest.copyMemory(from: valuePtr)
+				}
+			}
 		}
 	}
 
-	@inlinable @inline(__always) static func to<let count: Int>(array: inout InlineArray<count, UInt8>, offset: Int = 0) {
-		precondition(array.count - offset >= 4)
+	@inlinable @inline(__always) func to<let count: Int>(array: inout InlineArray<count, UInt8>, from relativeIndex: Data.Index = 0) {
+		precondition(array.count - relativeIndex >= 4)
 
 		var value = self
 		var span = array.mutableSpan
-		_ = withUnsafeBytes(of: &value) { ptr in
-			span.withUnsafeMutableBytes({ ptr.copyBytes(to: $0, from: offset...) })
+		withUnsafeBytes(of: &value) { valuePtr in
+			span.withUnsafeMutableBytes { dataPtr in
+				if let base = dataPtr.baseAddress {
+					let dest = UnsafeMutableRawBufferPointer(
+						start: base.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					dest.copyMemory(from: valuePtr)
+				}
+			}
 		}
 	}
 
@@ -129,42 +183,60 @@ extension UInt32 {
 }
 
 extension UInt64 {
-	@inlinable @inline(__always) static func from(data: Data, offset: Int = 0) -> Self {
-		precondition(data.count - offset >= 8)
+	@inlinable @inline(__always) static func from(data: Data, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(data.count - relativeIndex >= 8)
 
+		let index = data.startIndex + relativeIndex
 		// swift-format-ignore
-		return Self(data[offset]) | (Self(data[offset + 1]) << 8)
-			| (Self(data[offset + 2]) << 16) | (Self(data[offset + 3]) << 24)
-			| (Self(data[offset + 4]) << 32) | (Self(data[offset + 5]) << 40)
-			| (Self(data[offset + 6]) << 48) | (Self(data[offset + 7]) << 56)
+		return Self(data[index]) | (Self(data[index + 1]) << 8)
+			| (Self(data[index + 2]) << 16) | (Self(data[index + 3]) << 24)
+			| (Self(data[index + 4]) << 32) | (Self(data[index + 5]) << 40)
+			| (Self(data[index + 6]) << 48) | (Self(data[index + 7]) << 56)
 	}
 
-	@inlinable @inline(__always) static func from<let count: Int>(array: InlineArray<count, UInt8>, offset: Int = 0) -> Self {
-		precondition(array.count - offset >= 8)
+	@inlinable @inline(__always) static func from<let count: Int>(array: InlineArray<count, UInt8>, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(array.count - relativeIndex >= 8)
 
+		let index = array.startIndex + relativeIndex
 		// swift-format-ignore
-		return Self(array[offset]) | (Self(array[offset + 1]) << 8)
-			| (Self(array[offset + 2]) << 16) | (Self(array[offset + 3]) << 24)
-		 	| (Self(array[offset + 4]) << 32) | (Self(array[offset + 5]) << 40)
-			| (Self(array[offset + 6]) << 48) | (Self(array[offset + 7]) << 56)
+		return Self(array[index]) | (Self(array[index + 1]) << 8)
+			| (Self(array[index + 2]) << 16) | (Self(array[index + 3]) << 24)
+		 	| (Self(array[index + 4]) << 32) | (Self(array[index + 5]) << 40)
+			| (Self(array[index + 6]) << 48) | (Self(array[index + 7]) << 56)
 	}
 
-	@inlinable @inline(__always) static func to(data: inout Data, offset: Int = 0) {
-		precondition(data.count - offset >= 8)
+	@inlinable @inline(__always) func to(data: inout Data, from relativeIndex: Data.Index = 0) {
+		precondition(data.count - relativeIndex >= 8)
 
 		var value = self
-		_ = withUnsafeBytes(of: &value) { ptr in
-			data.withUnsafeMutableBytes({ ptr.copyBytes(to: $0, from: offset...) })
+		withUnsafeBytes(of: &value) { valuePtr in
+			data.withUnsafeMutableBytes { dataPtr in
+				if let base = dataPtr.baseAddress {
+					let dest = UnsafeMutableRawBufferPointer(
+						start: base.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					dest.copyMemory(from: valuePtr)
+				}
+			}
 		}
 	}
 
-	@inlinable @inline(__always) static func to<let count: Int>(array: inout InlineArray<count, UInt8>, offset: Int = 0) {
-		precondition(array.count - offset >= 8)
+	@inlinable @inline(__always) func to<let count: Int>(array: inout InlineArray<count, UInt8>, from relativeIndex: Data.Index = 0) {
+		precondition(array.count - relativeIndex >= 8)
 
 		var value = self
 		var span = array.mutableSpan
-		_ = withUnsafeBytes(of: &value) { ptr in
-			span.withUnsafeMutableBytes({ ptr.copyBytes(to: $0, from: offset...) })
+		withUnsafeBytes(of: &value) { valuePtr in
+			span.withUnsafeMutableBytes { dataPtr in
+				if let base = dataPtr.baseAddress {
+					let dest = UnsafeMutableRawBufferPointer(
+						start: base.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					dest.copyMemory(from: valuePtr)
+				}
+			}
 		}
 	}
 
