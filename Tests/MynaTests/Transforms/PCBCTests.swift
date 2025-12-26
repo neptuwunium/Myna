@@ -1,0 +1,85 @@
+// SPDX-FileCopyrightText: 2024-2026 Neptuwunium <ada@chronovore.dev>
+// SPDX-License-Identifier: EUPL-1.2
+
+import Foundation
+import Testing
+
+@testable import Myna
+
+struct PCBCTests {
+	@Test func roundTripTest() async throws {
+		let algorithm = XTEA(key: [0x10, 0x40, 0x80, 0xff])
+		let stimulus: Data = Data(repeating: 0x42, count: algorithm.blockSize * 4)
+		let pcbc = PCBCTransform(algorithm: algorithm, iv: nil, paddingMode: NoPadding())
+		let encrypted = try pcbc.encrypt(stimulus)
+		print(encrypted.hexdump())
+		let decrypted = try pcbc.decrypt(encrypted)
+		#expect(decrypted.elementsEqual(stimulus))
+	}
+
+	@Test func roundTripPaddingTest() async throws {
+		let algorithm = XTEA(key: [0x10, 0x40, 0x80, 0xff])
+		let stimulus: Data = Data(repeating: 0x42, count: algorithm.blockSize * 4)
+		let pcbc = PCBCTransform(algorithm: algorithm, iv: nil, paddingMode: PKCS7Padding())
+		let encrypted = try pcbc.encrypt(stimulus)
+		let decrypted = try pcbc.decrypt(encrypted)
+		print(encrypted.hexdump())
+		#expect(decrypted.elementsEqual(stimulus))
+	}
+
+	@Test func encryptTest() async throws {
+		let algorithm = XTEA(key: [0x10, 0x40, 0x80, 0xff])
+		let pcbc = PCBCTransform(algorithm: algorithm, iv: nil, paddingMode: NoPadding())
+		let encrypted = try pcbc.encrypt(Data(repeating: 0x42, count: algorithm.blockSize * 4))
+		let reference = Data([
+			0x90, 0x76, 0xab, 0xe3, 0x36, 0x1f, 0x25, 0x19,
+			0xec, 0xb2, 0x17, 0x2c, 0x00, 0xc0, 0x09, 0x8b,
+			0x6f, 0xef, 0x05, 0x51, 0xfc, 0xe4, 0xf2, 0x14,
+			0x4f, 0xe8, 0x65, 0x9f, 0xcd, 0xe1, 0x7b, 0x95,
+		])
+		#expect(encrypted.elementsEqual(reference))
+	}
+
+	@Test func decryptTest() async throws {
+		let algorithm = XTEA(key: [0x10, 0x40, 0x80, 0xff])
+		let pcbc = PCBCTransform(algorithm: algorithm, iv: nil, paddingMode: NoPadding())
+		let decrypted = try pcbc.decrypt(
+			Data([
+				0x90, 0x76, 0xab, 0xe3, 0x36, 0x1f, 0x25, 0x19,
+				0xec, 0xb2, 0x17, 0x2c, 0x00, 0xc0, 0x09, 0x8b,
+				0x6f, 0xef, 0x05, 0x51, 0xfc, 0xe4, 0xf2, 0x14,
+				0x4f, 0xe8, 0x65, 0x9f, 0xcd, 0xe1, 0x7b, 0x95,
+			]))
+		let reference = Data(repeating: 0x42, count: algorithm.blockSize * 4)
+		#expect(decrypted.elementsEqual(reference))
+	}
+
+	@Test func encryptPaddingTest() async throws {
+		let algorithm = XTEA(key: [0x10, 0x40, 0x80, 0xff])
+		let pcbc = PCBCTransform(algorithm: algorithm, iv: nil, paddingMode: PKCS7Padding())
+		let encrypted = try pcbc.encrypt(Data(repeating: 0x42, count: algorithm.blockSize * 4))
+		let reference = Data([
+			0x90, 0x76, 0xab, 0xe3, 0x36, 0x1f, 0x25, 0x19,
+			0xec, 0xb2, 0x17, 0x2c, 0x00, 0xc0, 0x09, 0x8b,
+			0x6f, 0xef, 0x05, 0x51, 0xfc, 0xe4, 0xf2, 0x14,
+			0x4f, 0xe8, 0x65, 0x9f, 0xcd, 0xe1, 0x7b, 0x95,
+			0x63, 0x23, 0x8e, 0x56, 0xca, 0x40, 0xaa, 0xc3,
+		])
+		#expect(encrypted.elementsEqual(reference))
+	}
+
+	@Test func decryptPaddingTest() async throws {
+		let algorithm = XTEA(key: [0x10, 0x40, 0x80, 0xff])
+		let pcbc = PCBCTransform(algorithm: algorithm, iv: nil, paddingMode: PKCS7Padding())
+		let decrypted = try pcbc.decrypt(
+			Data([
+				0x90, 0x76, 0xab, 0xe3, 0x36, 0x1f, 0x25, 0x19,
+				0xec, 0xb2, 0x17, 0x2c, 0x00, 0xc0, 0x09, 0x8b,
+				0x6f, 0xef, 0x05, 0x51, 0xfc, 0xe4, 0xf2, 0x14,
+				0x4f, 0xe8, 0x65, 0x9f, 0xcd, 0xe1, 0x7b, 0x95,
+				0x63, 0x23, 0x8e, 0x56, 0xca, 0x40, 0xaa, 0xc3,
+			]))
+		let reference = Data(repeating: 0x42, count: algorithm.blockSize * 4)
+		#expect(decrypted.elementsEqual(reference))
+	}
+}

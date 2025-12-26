@@ -8,8 +8,6 @@ extension Data {
 		precondition(self.count == other.count)
 		return Data(zip(self, other).map { $0 ^ $1 })
 	}
-
-	func hex() -> String { map { String(format: "%02hhx", $0) }.joined() }
 }
 
 extension Int { @inlinable @inline(__always) func align(into: Self) -> Self { (self + (into - 1)) & ~(into - 1) } }
