@@ -20,4 +20,7 @@ public protocol PaddingScheme {
 	/// - Throws: `MynaError.invalidInputLength` if the input data's size is not a block size
 	/// - Returns: The padded `Data` object.
 	func pad(data: Data, into: Int) throws -> Data
+
+	/// determines whether the padding must exist even if the data is already aligned (i.e. insert a whole block of padding)
+	var ensureExists: Bool { get }
 }

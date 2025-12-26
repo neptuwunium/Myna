@@ -36,4 +36,6 @@ public struct PKCS7Padding: PaddingScheme {
 		block.append(contentsOf: Array(repeating: UInt8(remain), count: remain))
 		return block
 	}
+
+	public var ensureExists: Bool = true
 }

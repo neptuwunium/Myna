@@ -28,4 +28,6 @@ public struct ZeroPadding: PaddingScheme {
 
 		return block
 	}
+
+	public var ensureExists: Bool = false
 }

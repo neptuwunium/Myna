@@ -12,4 +12,6 @@ public struct NoPadding: PaddingScheme {
 
 		return data
 	}
+
+	public var ensureExists: Bool = false
 }

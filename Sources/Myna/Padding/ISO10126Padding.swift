@@ -40,4 +40,6 @@ public struct ISO10126Padding: PaddingScheme {
 
 		return block
 	}
+
+	public var ensureExists: Bool = true
 }

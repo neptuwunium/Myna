@@ -19,19 +19,7 @@ public struct CBCTransform: BlockCipherTransform {
 	public mutating func encrypt(_ plainText: Data) throws -> Data {
 		if plainText.count == 0 { return Data() }
 
-		var blocks = plainText.chunks(ofCount: algorithm.blockSize)[...]  // cast to slice.
-		let finalBlock: Data
-		if plainText.count % algorithm.blockSize == 0 {
-			finalBlock = try padding.pad(data: Data(), into: algorithm.blockSize)
-		} else {
-			blocks = blocks.dropLast()
-
-			guard let lastBlock = blocks.last else { throw MynaError.systemError }
-
-			finalBlock = try padding.pad(data: lastBlock, into: algorithm.blockSize)
-		}
-
-		guard finalBlock.count == algorithm.blockSize || finalBlock.count == 0 else { throw MynaError.invalidInputLength }
+		let (blocks, finalBlock) = try TransformHelper.prepareBlocks(text: plainText, algorithm, padding)
 
 		var result = Data(capacity: (blocks.count + 1) * algorithm.blockSize)
 
@@ -40,7 +28,9 @@ public struct CBCTransform: BlockCipherTransform {
 			result.append(previousBlock)
 		}
 
-		result.append(try algorithm.encrypt(finalBlock.xor(with: previousBlock)))
+		if !finalBlock.isEmpty {
+			result.append(try algorithm.encrypt(finalBlock.xor(with: previousBlock)))
+		}
 
 		return result
 	}

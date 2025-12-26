@@ -13,6 +13,16 @@ extension Data {
 extension Int { @inlinable @inline(__always) func align(into: Self) -> Self { (self + (into - 1)) & ~(into - 1) } }
 
 extension InlineArray {
+	@inlinable @inline(__always) static func from(data: Data, _ fallback: Element, offset: Int = 0) -> Self {
+		precondition(data.count - offset >= count)
+
+		var value = Self(repeating: fallback)
+		_ = withUnsafeMutableBytes(of: &value) { ptr in
+			data.withUnsafeBytes({ $0[offset...].copyBytes(to: ptr) })
+		}
+		return value
+	}
+
 	@inlinable @inline(__always) static func to(data: inout Data, offset: Int = 0) {
 		precondition(data.count - offset >= count)
 

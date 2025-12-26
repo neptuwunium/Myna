@@ -27,4 +27,6 @@ public struct NoisePadding: PaddingScheme {
 
 		return block
 	}
+
+	public var ensureExists: Bool = false
 }

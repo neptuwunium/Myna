@@ -36,4 +36,6 @@ public struct ANSIX923Padding: PaddingScheme {
 
 		return block
 	}
+
+	public var ensureExists: Bool = true
 }

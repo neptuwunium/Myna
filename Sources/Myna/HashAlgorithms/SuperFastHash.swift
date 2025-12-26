@@ -31,8 +31,8 @@ public struct SuperFastHash: HashAlgorithm {
 
 		let length = data.count >> 2
 		if data.count >= 4 {
-			for index in 1 ... length {
-				let off = (index - 1) << 2
+			for index in 0 ..< length {
+				let off = index << 2
 				hash &+= UInt32(UInt16.from(data: data, offset: off))
 				let tmp = (UInt32(UInt16.from(data: data, offset: off + 2)) << 11) ^ hash
 				hash = (hash << 16) ^ tmp

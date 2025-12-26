@@ -61,4 +61,22 @@ struct DESTests {
 		let des = DES(key: [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef])
 		#expect(throws: MynaError.invalidInputLength) { try des.decrypt(Data([1])) }
 	}
+
+	@Test func setOddParityTest() async throws {
+		let key = DES.setOddParity(key: [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xff])
+		let stimulus: Data = Data([0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xfe])
+		#expect(key.data.elementsEqual(stimulus))
+	}
+
+	@Test func stringToKey() async throws {
+		let key = try DES.stringToKey(text: "Myna DES Str2Key TestVec")
+		let stimulus: Data = Data([0x54, 0x73, 0xe6, 0xbc, 0xa8, 0x51, 0x20, 0x64])
+		#expect(key.data.elementsEqual(stimulus))
+	}
+
+	@Test func stringToKeyUnaligned() async throws {
+		let key = try DES.stringToKey(text: "Myna DES String to Key Test Vector")
+		let stimulus: Data = Data([0x85, 0x40, 0x8f, 0xc4, 0x37, 0x57, 0x49, 0xef])
+		#expect(key.data.elementsEqual(stimulus))
+	}
 }
