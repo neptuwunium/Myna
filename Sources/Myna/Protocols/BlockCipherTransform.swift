@@ -4,6 +4,7 @@
 import Foundation
 
 /// Methods required for transforming data using a block-based transform.
+// todo: refactor into .update / .finalize style
 public protocol BlockCipherTransform {
 	/// Encrypts the given data.
 	///

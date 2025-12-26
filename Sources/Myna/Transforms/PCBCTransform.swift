@@ -4,8 +4,8 @@
 import Algorithms
 import Foundation
 
-/// A block transformation implementation for the Cipher Block Chaining (CBC) mode of operation.
-public struct CBCTransform: BlockCipherTransform {
+/// A block transformation implementation for the Permutating Cipher Block Chaining (PCBC) mode of operation.
+public struct PCBCTransform: BlockCipherTransform {
 	private let algorithm: BlockCipher
 	private let padding: PaddingScheme
 	private var previousBlock: Data
@@ -24,8 +24,9 @@ public struct CBCTransform: BlockCipherTransform {
 		var result = Data(capacity: plainText.count.align(into: algorithm.blockSize))
 
 		for block in blocks {
-			previousBlock = try algorithm.encrypt(block.xor(with: previousBlock))
-			result.append(previousBlock)
+			let tmp = try algorithm.encrypt(block.xor(with: previousBlock))
+			previousBlock = block.xor(with: tmp)
+			result.append(tmp)
 		}
 
 		if !finalBlock.isEmpty {
@@ -45,8 +46,9 @@ public struct CBCTransform: BlockCipherTransform {
 		var result = Data(capacity: blocks.count * algorithm.blockSize)
 
 		for block in blocks.dropLast() {
-			previousBlock = try algorithm.decrypt(block).xor(with: previousBlock)
-			result.append(previousBlock)
+			let tmp = try algorithm.decrypt(block).xor(with: previousBlock)
+			previousBlock = tmp.xor(with: block)
+			result.append(tmp)
 		}
 
 		guard let lastBlock = blocks.last else { throw MynaError.systemError }
