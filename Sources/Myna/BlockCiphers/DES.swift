@@ -45,7 +45,7 @@ public struct DES: BlockCipher {
 		}
 
 		key = Self.setOddParity(key: key)
-		var cbc = CBCTransform(algorithm: DES(key: key), iv: key.data, paddingMode: ZeroPadding())
+		let cbc = CBCTransform(algorithm: DES(key: key), iv: key.data, paddingMode: ZeroPadding())
 		let encrypted = try cbc.encrypt(bytes)
 		return Self.setOddParity(key: DESKey.from(data: encrypted.suffix(8), 0))
 	}

@@ -12,7 +12,6 @@ struct PCBCTests {
 		let stimulus: Data = Data(repeating: 0x42, count: algorithm.blockSize * 4)
 		let pcbc = PCBCTransform(algorithm: algorithm, iv: nil, paddingMode: NoPadding())
 		let encrypted = try pcbc.encrypt(stimulus)
-		print(encrypted.hexdump())
 		let decrypted = try pcbc.decrypt(encrypted)
 		#expect(decrypted.elementsEqual(stimulus))
 	}
@@ -23,7 +22,6 @@ struct PCBCTests {
 		let pcbc = PCBCTransform(algorithm: algorithm, iv: nil, paddingMode: PKCS7Padding())
 		let encrypted = try pcbc.encrypt(stimulus)
 		let decrypted = try pcbc.decrypt(encrypted)
-		print(encrypted.hexdump())
 		#expect(decrypted.elementsEqual(stimulus))
 	}
 
