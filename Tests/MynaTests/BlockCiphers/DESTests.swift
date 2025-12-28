@@ -32,34 +32,43 @@ struct DESTests {
 
 	@Test func roundTripTest() async throws {
 		let des = DES(key: [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef])
-		let stimulus: Data = Data([1, 2, 3, 4, 5, 6, 7, 8])
-		let encrypted = try des.encrypt(stimulus)
-		let decrypted = try des.decrypt(encrypted)
-		#expect(decrypted.elementsEqual(stimulus))
+		var stimulus: Data = Data([1, 2, 3, 4, 5, 6, 7, 8])
+		let stimulusCopy: Data = Data([1, 2, 3, 4, 5, 6, 7, 8])
+		try des.encrypt(&stimulus)
+		try des.decrypt(&stimulus)
+		#expect(stimulus.elementsEqual(stimulusCopy))
 	}
 
 	@Test func encryptTest() async throws {
 		let des = DES(key: [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef])
-		let encrypted = try des.encrypt(Data([1, 2, 3, 4, 5, 6, 7, 8]))
+		var encrypted = Data([1, 2, 3, 4, 5, 6, 7, 8])
+		try des.encrypt(&encrypted)
 		let reference = Data([0xe6, 0x8f, 0x79, 0x1b, 0xab, 0x16, 0xd4, 0xe6])
 		#expect(encrypted.elementsEqual(reference))
 	}
 
 	@Test func decryptTest() async throws {
 		let des = DES(key: [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef])
-		let decrypted = try des.decrypt(Data([0xe6, 0x8f, 0x79, 0x1b, 0xab, 0x16, 0xd4, 0xe6]))
+		var decrypted = Data([0xe6, 0x8f, 0x79, 0x1b, 0xab, 0x16, 0xd4, 0xe6])
+		try des.decrypt(&decrypted)
 		let reference: Data = Data([1, 2, 3, 4, 5, 6, 7, 8])
 		#expect(decrypted.elementsEqual(reference))
 	}
 
 	@Test func encryptFail() async throws {
 		let des = DES(key: [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef])
-		#expect(throws: MynaError.invalidInputLength) { try des.encrypt(Data([1])) }
+		#expect(throws: MynaError.invalidInputLength) {
+			var data = Data([1])
+			try des.encrypt(&data)
+		}
 	}
 
 	@Test func decryptFail() async throws {
 		let des = DES(key: [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef])
-		#expect(throws: MynaError.invalidInputLength) { try des.decrypt(Data([1])) }
+		#expect(throws: MynaError.invalidInputLength) {
+			var data = Data([1])
+			try des.decrypt(&data)
+		}
 	}
 
 	@Test func setOddParityTest() async throws {

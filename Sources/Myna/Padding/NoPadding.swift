@@ -5,6 +5,8 @@ import Foundation
 
 /// A padding implementation that does nothing.
 public struct NoPadding: PaddingScheme {
+	public init() {}
+
 	public func unpad(data: Data) -> Data { data }
 
 	public func pad(data: Data, into: Int) throws -> Data {

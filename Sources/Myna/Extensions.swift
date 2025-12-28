@@ -4,9 +4,19 @@
 import Foundation
 
 extension Data {
-	@inlinable @inline(__always) func xor(with other: Self) -> Self {
+	@inlinable @inline(__always)
+	mutating func xor(inplace other: borrowing Data) {
 		precondition(self.count == other.count)
-		return Data(zip(self, other).map { $0 ^ $1 })
+		let count = self.count
+		self.withUnsafeMutableBytes { selfRaw in
+			other.withUnsafeBytes { otherRaw in
+				let s = selfRaw.assumingMemoryBound(to: UInt8.self)
+				let o = otherRaw.assumingMemoryBound(to: UInt8.self)
+				for i in 0 ..< count {
+					s[i] ^= o[i]
+				}
+			}
+		}
 	}
 }
 

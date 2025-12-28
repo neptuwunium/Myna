@@ -4,6 +4,7 @@
 import Foundation
 
 /// Methods required for a block cipher.
+// todo: refactor to use [UInt8] instaed of Data
 public protocol BlockCipher {
 	/// The block size in bytes that the algorithm operates on.
 	var blockSize: Int { get }
@@ -12,13 +13,11 @@ public protocol BlockCipher {
 	///
 	/// - Parameter plainText: The `Data` block to be encrypted. The size of the block must match the `blockSize`.
 	/// - Throws: `MynaError.invalidInputLength` if the input data is not exactly `blockSize`.
-	/// - Returns: The encrypted `Data` block.
-	func encrypt(_ plainText: Data) throws -> Data
+	func encrypt(_ plainText: inout Data) throws
 
 	/// Decrypts a single block of data.
 	///
 	/// - Parameter cipherText: The `Data` block to be decrypted. The size of the block must match the `blockSize`.
 	/// - Throws: `MynaError.invalidInputLength` if the input data is not exactly `blockSize`.
-	/// - Returns: The decrypted `Data` block.
-	func decrypt(_ cipherText: Data) throws -> Data
+	func decrypt(_ cipherText: inout Data) throws
 }

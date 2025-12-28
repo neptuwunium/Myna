@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2024-2026 Neptuwunium <ada@chronovore.dev>
 // SPDX-License-Identifier: EUPL-1.2
 
-import Algorithms
 import Foundation
 
 /// A block transformation implementation for the Electronic Code Book (ECB) mode of operation.
@@ -16,36 +15,72 @@ public struct ECBTransform: BlockCipherTransform {
 		padding = paddingMode ?? PKCS7Padding()
 	}
 
-	public func encrypt(_ plainText: Data) throws -> Data {
+	public func encrypt(_ plainText: borrowing Data) throws -> Data {
 		if plainText.count == 0 { return Data() }
 
-		let (blocks, finalBlock) = try TransformHelper.prepareBlocks(text: plainText, algorithm, padding)
+		let (blocks, finalBlock) = try TransformHelper.prepareBlocks(plainText: plainText, algorithm, padding)
 
-		var result = Data(capacity: plainText.count.align(into: algorithm.blockSize))
+		let blockSize = algorithm.blockSize
+		var result = Data(count: blocks.count * blockSize + finalBlock.count)
+		var workingBlock = Data(count: blockSize)
 
-		for block in blocks { result.append(try algorithm.encrypt(block)) }
+		try result.withUnsafeMutableBytes { resultPtr in
+			var offset = 0
+			guard let resultBasePtr = resultPtr.baseAddress else {
+				throw MynaError.systemError
+			}
 
-		if !finalBlock.isEmpty {
-			result.append(try algorithm.encrypt(finalBlock))
+			let resultBase = resultBasePtr.assumingMemoryBound(to: UInt8.self)
+
+			for block in blocks {
+				workingBlock.replaceSubrange(0 ..< blockSize, with: block)
+				try algorithm.encrypt(&workingBlock)
+				workingBlock.copyBytes(to: resultBase.advanced(by: offset), count: blockSize)
+				offset += blockSize
+			}
+
+			if !finalBlock.isEmpty {
+				workingBlock.replaceSubrange(0 ..< blockSize, with: finalBlock)
+				try algorithm.encrypt(&workingBlock)
+				workingBlock.copyBytes(to: resultBase.advanced(by: offset), count: blockSize)
+			}
 		}
 
 		return result
 	}
 
-	public func decrypt(_ cipherText: Data) throws -> Data {
+	public func decrypt(_ cipherText: borrowing Data) throws -> Data {
 		guard cipherText.count % algorithm.blockSize == 0 else { throw MynaError.invalidInputLength }
 
 		if cipherText.count == 0 { return Data() }
 
-		var result = Data(capacity: cipherText.count.align(into: algorithm.blockSize))
-		let blocks = cipherText.chunks(ofCount: algorithm.blockSize)
+		let blockSize = algorithm.blockSize
+		let (blocks, blockCount, finalBlock) = try TransformHelper.prepareBlocks(cipherText: cipherText, algorithm)
 
-		for block in blocks.dropLast() { result.append(try algorithm.decrypt(block)) }
+		var result = Data(count: (blockCount - 1) * blockSize)
+		var workingBlock = Data(count: blockSize)
 
-		guard let lastBlock = blocks.last else { throw MynaError.systemError }
+		if let blocks = blocks {
+			try result.withUnsafeMutableBytes { resultPtr in
+				var offset = 0
+				guard let resultBasePtr = resultPtr.baseAddress else {
+					throw MynaError.systemError
+				}
 
-		let finalBlock = try algorithm.decrypt(lastBlock)
-		result.append(try padding.unpad(data: finalBlock))
+				let resultBase = resultBasePtr.assumingMemoryBound(to: UInt8.self)
+				for block in blocks {
+					workingBlock.replaceSubrange(0 ..< blockSize, with: block)
+					try algorithm.decrypt(&workingBlock)
+					workingBlock.copyBytes(to: resultBase.advanced(by: offset), count: blockSize)
+					offset += blockSize
+				}
+			}
+		}
+
+		workingBlock.replaceSubrange(0 ..< blockSize, with: finalBlock)
+		try algorithm.decrypt(&workingBlock)
+		result.append(try padding.unpad(data: workingBlock))
+
 		return result
 	}
 }

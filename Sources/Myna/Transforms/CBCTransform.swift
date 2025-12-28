@@ -16,45 +16,82 @@ public struct CBCTransform: BlockCipherTransform {
 		padding = paddingMode ?? PKCS7Padding()
 	}
 
-	public func encrypt(_ plainText: Data) throws -> Data {
+	public func encrypt(_ plainText: borrowing Data) throws -> Data {
 		if plainText.count == 0 { return Data() }
 
-		let (blocks, finalBlock) = try TransformHelper.prepareBlocks(text: plainText, algorithm, padding)
+		let (blocks, finalBlock) = try TransformHelper.prepareBlocks(plainText: plainText, algorithm, padding)
 
-		var result = Data(capacity: plainText.count.align(into: algorithm.blockSize))
+		let blockSize = algorithm.blockSize
+		var result = Data(count: blocks.count * blockSize + finalBlock.count)
 		var previousBlock = self.iv
+		var workingBlock = Data(count: blockSize)
 
-		for block in blocks {
-			previousBlock = try algorithm.encrypt(block.xor(with: previousBlock))
-			result.append(previousBlock)
-		}
+		try result.withUnsafeMutableBytes { resultPtr in
+			var offset = 0
+			guard let resultBasePtr = resultPtr.baseAddress else {
+				throw MynaError.systemError
+			}
 
-		if !finalBlock.isEmpty {
-			result.append(try algorithm.encrypt(finalBlock.xor(with: previousBlock)))
+			let resultBase = resultBasePtr.assumingMemoryBound(to: UInt8.self)
+
+			for block in blocks {
+				workingBlock.replaceSubrange(0 ..< blockSize, with: block)
+				workingBlock.xor(inplace: previousBlock)
+				try algorithm.encrypt(&workingBlock)
+				previousBlock.replaceSubrange(0 ..< blockSize, with: workingBlock)
+				workingBlock.copyBytes(to: resultBase.advanced(by: offset), count: blockSize)
+				offset += blockSize
+			}
+
+			if !finalBlock.isEmpty {
+				workingBlock.replaceSubrange(0 ..< blockSize, with: finalBlock)
+				workingBlock.xor(inplace: previousBlock)
+				try algorithm.encrypt(&workingBlock)
+				workingBlock.copyBytes(to: resultBase.advanced(by: offset), count: blockSize)
+			}
 		}
 
 		return result
 	}
 
-	public func decrypt(_ cipherText: Data) throws -> Data {
+	public func decrypt(_ cipherText: borrowing Data) throws -> Data {
 		guard cipherText.count % algorithm.blockSize == 0 else { throw MynaError.invalidInputLength }
 
 		if cipherText.count == 0 { return Data() }
 
-		let blocks = cipherText.chunks(ofCount: algorithm.blockSize)
+		let blockSize = algorithm.blockSize
+		let (blocks, blockCount, finalBlock) = try TransformHelper.prepareBlocks(cipherText: cipherText, algorithm)
+
+		var result = Data(count: (blockCount - 1) * blockSize)
 		var previousBlock = self.iv
+		var workingBlock = Data(count: blockSize)
 
-		var result = Data(capacity: blocks.count * algorithm.blockSize)
+		if let blocks = blocks {
+			try result.withUnsafeMutableBytes { resultPtr in
+				var offset = 0
+				guard let resultBasePtr = resultPtr.baseAddress else {
+					throw MynaError.systemError
+				}
 
-		for block in blocks.dropLast() {
-			result.append(try algorithm.decrypt(block).xor(with: previousBlock))
-			previousBlock = block
+				let resultBase = resultBasePtr.assumingMemoryBound(to: UInt8.self)
+
+				for block in blocks {
+					workingBlock.replaceSubrange(0 ..< blockSize, with: block)
+					try algorithm.decrypt(&workingBlock)
+					workingBlock.xor(inplace: previousBlock)
+
+					previousBlock.replaceSubrange(0 ..< blockSize, with: block)
+
+					workingBlock.copyBytes(to: resultBase.advanced(by: offset), count: blockSize)
+					offset += blockSize
+				}
+			}
 		}
 
-		guard let lastBlock = blocks.last else { throw MynaError.systemError }
-
-		let finalBlock = try algorithm.decrypt(lastBlock).xor(with: previousBlock)
-		result.append(try padding.unpad(data: finalBlock))
+		workingBlock.replaceSubrange(0 ..< blockSize, with: finalBlock)
+		try algorithm.decrypt(&workingBlock)
+		workingBlock.xor(inplace: previousBlock)
+		result.append(try padding.unpad(data: workingBlock))
 
 		return result
 	}

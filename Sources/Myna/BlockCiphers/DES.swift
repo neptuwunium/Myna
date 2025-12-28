@@ -155,7 +155,7 @@ public struct DES: BlockCipher {
 		}
 	}
 
-	public func encrypt(_ plainText: Data) throws -> Data {
+	public func encrypt(_ plainText: inout Data) throws {
 		guard plainText.count == 8 else {
 			throw MynaError.invalidInputLength
 		}
@@ -179,10 +179,11 @@ public struct DES: BlockCipher {
 
 		Self.finalPermute(&r, &l)
 
-		return l.data + r.data
+		l.to(data: &plainText)
+		r.to(data: &plainText, from: 4)
 	}
 
-	public func decrypt(_ cipherText: Data) throws -> Data {
+	public func decrypt(_ cipherText: inout Data) throws {
 		guard cipherText.count == 8 else {
 			throw MynaError.invalidInputLength
 		}
@@ -206,11 +207,38 @@ public struct DES: BlockCipher {
 
 		Self.finalPermute(&r, &l)
 
-		return l.data + r.data
+		l.to(data: &cipherText)
+		r.to(data: &cipherText, from: 4)
 	}
 }
 
 public typealias DESKey = InlineArray<8, UInt8>
+
+extension DESKey {
+	@inlinable public static func from(data: Data, _ fallback: Element, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(data.count - relativeIndex >= count)
+
+		var value = Self(repeating: fallback)
+		withUnsafeMutableBytes(of: &value) { valuePtr in
+			data.withUnsafeBytes { dataPtr in
+				if let baseAddress = dataPtr.baseAddress {
+					let sourcePtr = UnsafeRawBufferPointer(
+						start: baseAddress.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					valuePtr.copyMemory(from: sourcePtr)
+				}
+			}
+		}
+		return value
+	}
+
+	@inlinable public var data: Data {
+		var value = self
+		return withUnsafeBytes(of: &value, { Data($0) })
+	}
+}
+
 internal typealias DESKeyLine = InlineArray<2, UInt32>
 internal typealias DESKeySchedule = InlineArray<16, DESKeyLine>
 

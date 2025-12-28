@@ -7,6 +7,8 @@ import Foundation
 ///
 /// PKCS7 fills the remaining bytes with the total amount of bytes added.
 public struct PKCS7Padding: PaddingScheme {
+	public init() {}
+
 	public func unpad(data: Data) throws -> Data {
 		if let finalRemain = data.last {
 			guard finalRemain != 0 else { throw MynaError.unexpectedPadding }

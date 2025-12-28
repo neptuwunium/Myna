@@ -18,7 +18,7 @@ public struct XTEA: BlockCipher {
 		self.seed = delta &* UInt32(rounds)
 	}
 
-	public func encrypt(_ plainText: Data) throws -> Data {
+	public func encrypt(_ plainText: inout Data) throws {
 		guard plainText.count == 8 else {
 			throw MynaError.invalidInputLength
 		}
@@ -31,10 +31,12 @@ public struct XTEA: BlockCipher {
 			sum &+= delta
 			v1 &+= (((v0 << 4) ^ (v0 >> 5)) &+ v0) ^ (sum &+ key[Int((sum >> 11) & 3)])
 		}
-		return v0.data + v1.data
+
+		v0.to(data: &plainText)
+		v1.to(data: &plainText, from: 4)
 	}
 
-	public func decrypt(_ cipherText: Data) throws -> Data {
+	public func decrypt(_ cipherText: inout Data) throws {
 		guard cipherText.count == 8 else {
 			throw MynaError.invalidInputLength
 		}
@@ -47,8 +49,35 @@ public struct XTEA: BlockCipher {
 			sum &-= delta
 			v0 &-= (((v1 << 4) ^ (v1 >> 5)) &+ v1) ^ (sum &+ key[Int(sum & 3)])
 		}
-		return v0.data + v1.data
+
+		v0.to(data: &cipherText)
+		v1.to(data: &cipherText, from: 4)
 	}
 }
 
 public typealias XTEAKey = InlineArray<4, UInt32>
+
+extension XTEAKey {
+	@inlinable public static func from(data: Data, _ fallback: Element, from relativeIndex: Data.Index = 0) -> Self {
+		precondition(data.count - relativeIndex >= count)
+
+		var value = Self(repeating: fallback)
+		withUnsafeMutableBytes(of: &value) { valuePtr in
+			data.withUnsafeBytes { dataPtr in
+				if let baseAddress = dataPtr.baseAddress {
+					let sourcePtr = UnsafeRawBufferPointer(
+						start: baseAddress.advanced(by: relativeIndex),
+						count: MemoryLayout<Self>.size
+					)
+					valuePtr.copyMemory(from: sourcePtr)
+				}
+			}
+		}
+		return value
+	}
+
+	@inlinable public var data: Data {
+		var value = self
+		return withUnsafeBytes(of: &value, { Data($0) })
+	}
+}
